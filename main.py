@@ -49,60 +49,14 @@ def get_taxa_cambio() -> float:
         return 0.128  # fallback fixo
 
 def buscar_produtos(query: str) -> list:
-    """Busca gratuita via DuckDuckGo scraping leve"""
-    resultados = []
-    try:
-        headers = {"User-Agent": "Mozilla/5.0"}
-        # Busca no Weidian via DDG
-        url = f"https://html.duckduckgo.com/html/?q={requests.utils.quote(query + ' site:weidian.com OR site:taobao.com preco')}"
-        r = requests.get(url, headers=headers, timeout=8)
-        from html.parser import HTMLParser
-
-        class LinkParser(HTMLParser):
-            def __init__(self):
-                super().__init__()
-                self.links = []
-                self.titles = []
-                self._cur_title = ""
-                self._in_title = False
-
-            def handle_starttag(self, tag, attrs):
-                attrs = dict(attrs)
-                if tag == "a" and "href" in attrs:
-                    href = attrs["href"]
-                    if "weidian.com" in href or "taobao.com" in href or "1688.com" in href:
-                        self.links.append(href)
-                        self._in_title = True
-
-            def handle_data(self, data):
-                if self._in_title:
-                    self._cur_title += data
-
-            def handle_endtag(self, tag):
-                if tag == "a" and self._in_title:
-                    self.titles.append(self._cur_title.strip())
-                    self._cur_title = ""
-                    self._in_title = False
-
-        parser = LinkParser()
-        parser.feed(r.text)
-
-        for i, link in enumerate(parser.links[:3]):
-            title = parser.titles[i] if i < len(parser.titles) else query
-            resultados.append({"titulo": title or query, "link": link})
-
-    except Exception as e:
-        logging.warning(f"Busca falhou: {e}")
-
-    # Se não encontrou nada, gera links de pesquisa diretos
-    if not resultados:
-        q = requests.utils.quote(query)
-        resultados = [
-            {"titulo": f"{query} - Weidian", "link": f"https://weidian.com/?search={q}"},
-            {"titulo": f"{query} - Taobao", "link": f"https://s.taobao.com/search?q={q}"},
-            {"titulo": f"{query} - 1688",   "link": f"https://s.1688.com/selloffer/offer_search.htm?keywords={q}"},
-        ]
-    return resultados
+    """Gera links diretos de pesquisa nas plataformas chinesas"""
+    q = requests.utils.quote(query)
+    return [
+        {"titulo": f"{query} — Weidian 🛍️", "link": f"https://weidian.com/?search={q}"},
+        {"titulo": f"{query} — Taobao 🛒",   "link": f"https://s.taobao.com/search?q={q}"},
+        {"titulo": f"{query} — 1688 💰",      "link": f"https://s.1688.com/selloffer/offer_search.htm?keywords={q}"},
+        {"titulo": f"{query} — Pandabuy 📦",  "link": f"https://www.pandabuy.com/search?keyword={q}"},
+    ]
 
 def calcular(preco_cny: float, peso: float, taxa: float) -> dict:
     preco_eur   = round(preco_cny * taxa, 2)
