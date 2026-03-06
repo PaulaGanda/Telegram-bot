@@ -46,42 +46,20 @@ def get_taxa_cambio() -> float:
         return 0.128
 
 def buscar_produtos(query: str) -> list:
-    """Busca produtos reais via SerpAPI no Taobao"""
-    try:
-        params = {
-            "engine": "baidu_shopping",
-            "q": query,
-            "api_key": SERPAPI_KEY,
-        }
-        r = requests.get("https://serpapi.com/search", params=params, timeout=10)
-        data = r.json()
-        resultados = []
-        for item in data.get("shopping_results", [])[:4]:
-            resultados.append({
-                "titulo": item.get("title", query)[:50],
-                "link": item.get("link", ""),
-                "preco_cny": item.get("price", ""),
-                "imagem": item.get("thumbnail", ""),
-                "vendedor": item.get("source", ""),
-            })
-        if resultados:
-            return resultados
-    except Exception as e:
-        logging.warning(f"SerpAPI falhou: {e}")
-
-    # Fallback: links de pesquisa direta
+    """Busca produtos via Pandabuy — sem login necessario"""
     q = requests.utils.quote(query)
     return [
-        {"titulo": f"{query} - Taobao", "link": f"https://s.taobao.com/search?q={q}", "preco_cny": "", "imagem": "", "vendedor": "Taobao"},
-        {"titulo": f"{query} - Weidian", "link": f"https://weidian.com/?search={q}", "preco_cny": "", "imagem": "", "vendedor": "Weidian"},
+        {"titulo": f"{query} - Pandabuy", "link": f"https://www.pandabuy.com/search?keyword={q}", "preco_cny": "", "imagem": "", "vendedor": "Pandabuy"},
+        {"titulo": f"{query} - Superbuy",  "link": f"https://www.superbuy.com/en/page/search/?keyword={q}", "preco_cny": "", "imagem": "", "vendedor": "Superbuy"},
+        {"titulo": f"{query} - Cssbuy",    "link": f"https://www.cssbuy.com/search?keyword={q}", "preco_cny": "", "imagem": "", "vendedor": "Cssbuy"},
     ]
 
 def buscar_qc(produto: str, vendedor: str) -> str:
-    """Busca fotos QC do vendedor via SerpAPI Google Images"""
+    """Busca fotos QC via SerpAPI Google Images"""
     try:
         params = {
             "engine": "google_images",
-            "q": f"{produto} {vendedor} QC review haul",
+            "q": f"{produto} QC haul rep review",
             "api_key": SERPAPI_KEY,
         }
         r = requests.get("https://serpapi.com/search", params=params, timeout=10)
