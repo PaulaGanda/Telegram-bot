@@ -49,7 +49,7 @@ def buscar_produtos(query: str) -> list:
     """Busca produtos via Pandabuy — sem login necessario"""
     q = requests.utils.quote(query)
     return [
-        {"titulo": f"{query} - Pandabuy", "link": f"https://www.pandabuy.com/search?keyword={q}", "preco_cny": "", "imagem": "", "vendedor": "Pandabuy"},
+        {"titulo": f"{query} - Sugargoo",  "link": f"https://www.sugargoo.com/#/home/productSearch?searchInfo={q}", "preco_cny": "", "imagem": "", "vendedor": "Sugargoo"},
         {"titulo": f"{query} - Superbuy",  "link": f"https://www.superbuy.com/en/page/search/?keyword={q}", "preco_cny": "", "imagem": "", "vendedor": "Superbuy"},
         {"titulo": f"{query} - Cssbuy",    "link": f"https://www.cssbuy.com/search?keyword={q}", "preco_cny": "", "imagem": "", "vendedor": "Cssbuy"},
     ]
