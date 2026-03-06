@@ -52,10 +52,10 @@ def buscar_produtos(query: str) -> list:
     """Gera links diretos de pesquisa nas plataformas chinesas"""
     q = requests.utils.quote(query)
     return [
-        {"titulo": f"{query} — Weidian 🛍️", "link": f"https://weidian.com/?search={q}"},
-        {"titulo": f"{query} — Taobao 🛒",   "link": f"https://s.taobao.com/search?q={q}"},
-        {"titulo": f"{query} — 1688 💰",      "link": f"https://s.1688.com/selloffer/offer_search.htm?keywords={q}"},
-        {"titulo": f"{query} — Pandabuy 📦",  "link": f"https://www.pandabuy.com/search?keyword={q}"},
+        {"titulo": f"{query} - Weidian", "link": f"https://weidian.com/?search={q}"},
+        {"titulo": f"{query} - Taobao",  "link": f"https://s.taobao.com/search?q={q}"},
+        {"titulo": f"{query} - 1688",    "link": f"https://s.1688.com/selloffer/offer_search.htm?keywords={q}"},
+        {"titulo": f"{query} - Pandabuy","link": f"https://www.pandabuy.com/search?keyword={q}"},
     ]
 
 def calcular(preco_cny: float, peso: float, taxa: float) -> dict:
@@ -74,33 +74,31 @@ def calcular(preco_cny: float, peso: float, taxa: float) -> dict:
     }
 
 def gerar_resposta(produto: str, resultados: list, calc: dict, taxa: float) -> str:
-    melhor = resultados[0] if resultados else None
-    outras = "\n".join(f"  • <a href='{r['link']}'>{r['titulo'][:40]}...</a>" for r in resultados[1:]) or "  Sem mais resultados"
+    imposto_str = f"EUR {calc['imposto']} (IVA)" if calc['imposto'] > 0 else "Isento (valor menor que 45 EUR)"
 
-    qc_link = ""
-    if melhor:
-        qc_link = f"https://www.ufinds.net/?url={requests.utils.quote(melhor['link'])}"
+    linhas = [
+        f"🔥 {produto.upper()}",
+        "",
+        f"💰 Estimativa: ~EUR {calc['preco_eur']} (cambio: 1 CNY = EUR {round(taxa,4)})",
+        f"📦 Peso estimado: {estimar_peso(produto)}kg",
+        f"🚚 Frete estimado: ~EUR {calc['frete']}",
+        f"🏛 Importacao PT: {imposto_str}",
+        f"✅ Total estimado PT: ~EUR {calc['total_pt']}",
+        f"🏷 Revenda sugerida: EUR {calc['revenda']}",
+        "",
+        "🔗 Pesquisar produto:",
+    ]
 
-    imposto_str = f"€{calc['imposto']} (IVA)" if calc['imposto'] > 0 else "Isento (valor < €45)"
+    for r in resultados:
+        linhas.append(f"• {r['titulo']}: {r['link']}")
 
-    return f"""🔥 <b>{produto.upper()}</b>
+    if resultados:
+        qc = f"https://www.ufinds.net/?url={requests.utils.quote(resultados[0]['link'])}"
+        linhas.append(f"\n📸 Ver QC: {qc}")
 
-💰 Estimativa preço: ~€{calc['preco_eur']} <i>(câmbio: 1 CNY = €{round(taxa,4)})</i>
-📦 Peso estimado: {estimar_peso(produto)}kg
-🚚 Frete estimado: ~€{calc['frete']}
-🏛 Importação PT: {imposto_str}
-✅ <b>Total estimado PT: ~€{calc['total_pt']}</b>
-🏷 Revenda sugerida: <b>€{calc['revenda']}</b>
+    linhas.append("\n⚠️ Precos sao estimativas. Confirma sempre stock antes de encomendar.")
 
-🔗 <b>Resultado principal:</b>
-{"<a href='" + melhor['link'] + "'>" + melhor['titulo'][:50] + "</a>" if melhor else "Sem resultado direto"}
-
-📉 <b>Outras opções:</b>
-{outras}
-
-{"📸 <b>Ver QC:</b> <a href='" + qc_link + "'>UFinds QC</a>" if melhor else ""}
-
-⚠️ <i>Preços são estimativas. Confirma sempre stock e peso real antes de encomendar.</i>"""
+    return "\n".join(linhas)
 
 # ──────────────────────────────────────────
 # HANDLERS
@@ -140,7 +138,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         preco_cny_estimado = {0.9: 350, 0.6: 180, 0.5: 140, 0.45: 120, 0.3: 80, 0.25: 60, 0.15: 45, 0.4: 150}.get(peso, 100)
         calc      = calcular(preco_cny_estimado, peso, taxa)
         resposta  = gerar_resposta(produto, resultados, calc, taxa)
-        await msg.reply_text(resposta, parse_mode="HTML", disable_web_page_preview=False)
+        await msg.reply_text(resposta)
     except Exception as e:
         logging.error(e)
         await msg.reply_text("❌ Erro na pesquisa. Tenta novamente com outro nome.")
